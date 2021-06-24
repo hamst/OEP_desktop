@@ -24,12 +24,13 @@ int main()
     // pass dimension of processing frame
     auto ort = std::make_shared<bnb::offscreen_render_target>(oep_width, oep_height);
 
+    bnb::interfaces::offscreen_effect_player::initialize_if_needed({ BNB_RESOURCES_FOLDER }, BNB_CLIENT_TOKEN);
+
     // Create instance of offscreen effect player, pass path to location of effects,
     // token, dimension of processing frame (for best performance it is better to coincide
     // with camera frame dimensions), manual sound (useful fro some cases when sound 
     // should start and specified moment
-    auto oep = bnb::interfaces::offscreen_effect_player::create({ BNB_RESOURCES_FOLDER }, BNB_CLIENT_TOKEN,
-                                               oep_width, oep_height, false, ort);
+    auto oep = bnb::interfaces::offscreen_effect_player::create(oep_width, oep_height, false, ort);
 
     // Make glfw_window and render_thread only for show result of OEP
     // We want to share resources between context, we know that offscreen_render_target is based on GLFW and returned context

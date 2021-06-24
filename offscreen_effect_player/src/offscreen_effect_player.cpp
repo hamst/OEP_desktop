@@ -6,7 +6,6 @@
 namespace bnb
 {
     ioep_sptr interfaces::offscreen_effect_player::create(
-        const std::vector<std::string>& path_to_resources, const std::string& client_token,
         int32_t width, int32_t height, bool manual_audio, iort_sptr ort)
     {
         if (ort == nullptr) {
@@ -14,16 +13,13 @@ namespace bnb
         }
 
         // we use "new" instead of "make_shared" because the constructor in "offscreen_effect_player" is private
-        return oep_sptr(new bnb::offscreen_effect_player(
-                path_to_resources, client_token, width, height, manual_audio, ort));
+        return oep_sptr(new bnb::offscreen_effect_player(width, height, manual_audio, ort));
     }
 
     offscreen_effect_player::offscreen_effect_player(
-        const std::vector<std::string>& path_to_resources, const std::string& client_token,
         int32_t width, int32_t height, bool manual_audio,
         iort_sptr offscreen_render_target)
-            : m_utility(path_to_resources, client_token)
-            , m_ep(bnb::interfaces::effect_player::create( {
+            : m_ep(bnb::interfaces::effect_player::create( {
                 width, height,
                 bnb::interfaces::nn_mode::automatically,
                 bnb::interfaces::face_search_mode::good,
@@ -120,15 +116,17 @@ namespace bnb
         m_scheduler.enqueue(task);
     }
 
-    void offscreen_effect_player::load_effect(const std::string& effect_path)
+    void offscreen_effect_player::load_effect(const std::string& effect_path, oep_load_effect_cb cb)
     {
-        auto task = [this, effect = effect_path]() {
+        auto task = [this, effect = effect_path, cb]() {
             m_ort->activate_context();
 
             if (auto e_manager = m_ep->effect_manager()) {
                 e_manager->load(effect);
+                if (cb) cb(true);
             } else {
                 std::cout << "[Error] effect manager not initialized" << std::endl;
+                if (cb) cb(false);
             }
         };
 
@@ -137,7 +135,7 @@ namespace bnb
 
     void offscreen_effect_player::unload_effect()
     {
-        load_effect("");
+        load_effect("", nullptr);
     }
 
     void offscreen_effect_player::pause()
@@ -155,21 +153,24 @@ namespace bnb
         m_ep->enable_audio(enable);
     }
 
-    void offscreen_effect_player::call_js_method(const std::string& method, const std::string& param)
+    void offscreen_effect_player::call_js_method(const std::string& method, const std::string& param, oep_call_js_cb cb)
     {
-        auto task = [this, method = method, param = param]() {
+        auto task = [this, method = method, param = param, cb]() {
             m_ort->activate_context();
 
             if (auto e_manager = m_ep->effect_manager()) {
                 if (auto effect = e_manager->current()) {
                     effect->call_js_method(method, param);
+                    if (cb) cb(true);
                 }
                 else {
                     std::cout << "[Error] effect not loaded" << std::endl;
+                    if (cb) cb(false);
                 }
             }
             else {
                 std::cout << "[Error] effect manager not initialized" << std::endl;
+                if (cb) cb(false);
             }
         };
 
@@ -208,5 +209,23 @@ namespace bnb
         m_scheduler.enqueue(task);
     }
 
+    // static
+    bool interfaces::offscreen_effect_player::initialize_if_needed(const std::vector<std::string>& path_to_resources, const std::string& client_token) {
+
+        static std::once_flag onceToken;
+        static std::unique_ptr<bnb::utility> instance;
+        std::cerr << "initialize_if_needed 1\n";
+        std::call_once(onceToken, [path_to_resources, client_token]() {
+            std::cerr << "initialize_if_needed 2\n";
+
+            bnb::utility* utility = new bnb::utility(path_to_resources, client_token);
+            instance = std::unique_ptr<bnb::utility>(utility);
+            //instance = std::make_unique<bnb::utility>(path_to_resources, client_token);
+            std::cerr << "initialize_if_needed 3\n";
+
+        });
+        std::cerr << "initialize_if_needed 4\n";
+        return instance.get();
+    }
 
 } // bnb

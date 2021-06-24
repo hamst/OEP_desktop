@@ -12,7 +12,7 @@
 
 #include <mutex>
 
-class GLFWwindow;
+struct GLFWwindow;
 
 namespace bnb
 {

@@ -10,6 +10,8 @@
 namespace bnb {
 
     using oep_pb_ready_cb = std::function<void(std::optional<ipb_sptr>)>;
+    using oep_load_effect_cb = std::function<void(bool)>;
+    using oep_call_js_cb = std::function<void(bool)>;
 
 namespace interfaces
 {
@@ -17,7 +19,6 @@ namespace interfaces
     {
     public:
         static std::shared_ptr<offscreen_effect_player> create(
-            const std::vector<std::string>& path_to_resources, const std::string& client_token,
             int32_t width, int32_t height, bool manual_audio, iort_sptr ort);
 
         virtual ~offscreen_effect_player() = default;
@@ -53,7 +54,7 @@ namespace interfaces
          *
          * Example load_effect("effects/test_BG")
          */
-        virtual void load_effect(const std::string& effect_path) = 0;
+        virtual void load_effect(const std::string& effect_path, oep_load_effect_cb cb) = 0;
 
         /**
          * Unload effect from cache.
@@ -93,7 +94,9 @@ namespace interfaces
          *
          * Example call_js_method("just_bg", "{ "recordDuration": 15, "rotation_vector": true }")
          */
-        virtual void call_js_method(const std::string& method, const std::string& param) = 0;
+        virtual void call_js_method(const std::string& method, const std::string& param, oep_call_js_cb cb) = 0;
+
+        static bool initialize_if_needed(const std::vector<std::string>& path_to_resources, const std::string& client_token);
     };
 }
 } // bnb::interfaces

@@ -17,8 +17,7 @@ namespace bnb
                                    public std::enable_shared_from_this<offscreen_effect_player>
     {
     private:
-        offscreen_effect_player(const std::vector<std::string>& path_to_resources,
-            const std::string& client_token,
+        offscreen_effect_player(
             int32_t width, int32_t height, bool manual_audio,
             iort_sptr ort);
 
@@ -30,7 +29,7 @@ namespace bnb
 
         void surface_changed(int32_t width, int32_t height) override;
 
-        void load_effect(const std::string& effect_path) override;
+        void load_effect(const std::string& effect_path, oep_load_effect_cb cb) override;
         void unload_effect() override;
 
         void pause() override;
@@ -38,7 +37,7 @@ namespace bnb
 
         void enable_audio(bool enable) override;
 
-        void call_js_method(const std::string& method, const std::string& param) override;
+        void call_js_method(const std::string& method, const std::string& param, oep_call_js_cb cb) override;
 
     private:
         friend class interfaces::offscreen_effect_player;
@@ -48,7 +47,6 @@ namespace bnb
         void get_current_buffer_texture(oep_texture_cb callback);
 
     private:
-        bnb::utility m_utility;
         std::shared_ptr<interfaces::effect_player> m_ep;
         iort_sptr m_ort;
 
